@@ -5,12 +5,18 @@ from utils.utils import init_sess
 
 class Gan:
     def __init__(self):
+        """
+        - oracle/generator/discriminator three sub-module
+        - oracle/generator/discriminator data loader
+        -
+        """
         self.oracle = None
         self.generator = None
         self.discriminator = None
         self.gen_data_loader = None
         self.dis_data_loader = None
         self.oracle_data_loader = None
+
         self.sess = init_sess()
         self.metrics = list()
         self.epoch = 0
@@ -48,6 +54,9 @@ class Gan:
         self.epoch = 0
 
     def evaluate(self):
+        """
+        get_score?
+        """
         from time import time
         log = "epoch:" + str(self.epoch) + '\t'
         scores = list()
