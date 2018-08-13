@@ -10,6 +10,7 @@ from models.mle.Mle import Mle
 from models.rankgan.Rankgan import Rankgan
 from models.seqgan.Seqgan import Seqgan
 from models.textGan_MMD.Textgan import TextganMmd
+import argparse
 
 
 def set_gan(gan_name):
@@ -30,7 +31,6 @@ def set_gan(gan_name):
     except KeyError:
         print(Fore.RED + 'Unsupported GAN type: ' + gan_name + Fore.RESET)
         sys.exit(-2)
-
 
 
 def set_training(gan, training_method):
@@ -58,7 +58,7 @@ def parse_cmd(argv):
         if '-h' in opt_arg.keys():
             print('usage: python main.py -g <gan_type>')
             print('       python main.py -g <gan_type> -t <train_type>')
-            print('       python main.py -g <gan_type> -t realdata -d <your_data_location>')
+            print('       python main.py -g <gan_type> -t real -d <your_data_location>')
             sys.exit(0)
         if not '-g' in opt_arg.keys():
             print('unspecified GAN type, use MLE training only...')
@@ -77,9 +77,20 @@ def parse_cmd(argv):
         print('invalid arguments!')
         print('`python main.py -h`  for help')
         sys.exit(-1)
-    pass
 
 
 if __name__ == '__main__':
-    gan = None
-    parse_cmd(sys.argv[1:])
+
+    parser = argparse.ArgumentParser(prog="app_texygen", description="using texygen to train a generator",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("-g", "--gan-type", default="mle", help="seqgan|gsgan|textgan|leakgan|rankgan|maligan|mle")
+    parser.add_argument("-t", "--train-type", default="oracle", help="oracle|cfg|real")
+    parser.add_argument("-d", "--data-location", default=None, help="data location")
+
+    args = parser.parse_args()
+
+    gan = set_gan(args.gan_type)
+    gan_func = set_training(gan, args.train_type)
+    if args.train_type == "real":
+        gan_func(args.data_location)
