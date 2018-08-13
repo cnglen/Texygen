@@ -14,6 +14,7 @@ import argparse
 
 
 def set_gan(gan_name):
+    """get a Gan instance of type gan_name"""
     gans = dict()
     gans['seqgan'] = Seqgan
     gans['gsgan'] = Gsgan
@@ -34,6 +35,7 @@ def set_gan(gan_name):
 
 
 def set_training(gan, training_method):
+    """get a training function for `gan` using `training_method`"""
     try:
         if training_method == 'oracle':
             gan_func = gan.train_oracle
@@ -48,35 +50,6 @@ def set_training(gan, training_method):
         print(Fore.RED + 'Unsupported training setting: ' + training_method + Fore.RESET)
         sys.exit(-3)
     return gan_func
-
-
-def parse_cmd(argv):
-    try:
-        opts, args = getopt.getopt(argv, "hg:t:d:")
-
-        opt_arg = dict(opts)
-        if '-h' in opt_arg.keys():
-            print('usage: python main.py -g <gan_type>')
-            print('       python main.py -g <gan_type> -t <train_type>')
-            print('       python main.py -g <gan_type> -t real -d <your_data_location>')
-            sys.exit(0)
-        if not '-g' in opt_arg.keys():
-            print('unspecified GAN type, use MLE training only...')
-            gan = set_gan('mle')
-        else:
-            gan = set_gan(opt_arg['-g'])
-        if not '-t' in opt_arg.keys():
-            gan.train_oracle()
-        else:
-            gan_func = set_training(gan, opt_arg['-t'])
-            if opt_arg['-t'] == 'real' and '-d' in opt_arg.keys():
-                gan_func(opt_arg['-d'])
-            else:
-                gan_func()
-    except getopt.GetoptError:
-        print('invalid arguments!')
-        print('`python main.py -h`  for help')
-        sys.exit(-1)
 
 
 if __name__ == '__main__':
@@ -94,3 +67,5 @@ if __name__ == '__main__':
     gan_func = set_training(gan, args.train_type)
     if args.train_type == "real":
         gan_func(args.data_location)
+    else:
+        gan_func()
