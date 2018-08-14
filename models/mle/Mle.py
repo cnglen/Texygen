@@ -49,16 +49,24 @@ class Mle(Gan):
         self.set_data_loader(gen_loader=gen_dataloader, dis_loader=dis_dataloader, oracle_loader=oracle_dataloader)
 
     def init_metric(self):
+
+        # nll-oracle: 用oracle去评判generator产生的数据
         nll = Nll(data_loader=self.oracle_data_loader, rnn=self.oracle, sess=self.sess)
         self.add_metric(nll)
 
+        # nll-test: 用generator去评判真实数据
         inll = Nll(data_loader=self.gen_data_loader, rnn=self.generator, sess=self.sess)
         inll.set_name('nll-test')
         self.add_metric(inll)
 
-        from utils.metrics.DocEmbSim import DocEmbSim
-        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file, num_vocabulary=self.vocab_size)
-        self.add_metric(docsim)
+        # # remove docsim
+        # # # FIXME: nan error
+        # from utils.metrics.DocEmbSim import DocEmbSim
+        # print(self.oracle_file, self.generator_file, self.vocab_size)
+        # docsim = DocEmbSim(oracle_file=self.oracle_file,
+        #                    generator_file=self.generator_file,
+        #                    num_vocabulary=self.vocab_size)
+        # self.add_metric(docsim)
 
     def train_discriminator(self):
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
@@ -83,7 +91,7 @@ class Mle(Gan):
                 self.log.write('\n')
             scores = super().evaluate()
             for score in scores:
-                self.log.write(str(score)+',')
+                self.log.write(str(score) + ',')
             self.log.write('\n')
             return scores
         return super().evaluate()
@@ -93,6 +101,11 @@ class Mle(Gan):
         self.sess.run(tf.global_variables_initializer())
 
         self.pre_epoch_num = 80
+
+        debug = False
+        if debug:
+            self.pre_epoch_num = 8
+
         self.log = open('experiment-log-mle.csv', 'w')
         generate_samples(self.sess, self.oracle, self.batch_size, self.generate_num, self.oracle_file)
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
@@ -105,13 +118,12 @@ class Mle(Gan):
             start = time()
             loss = pre_train_epoch(self.sess, self.generator, self.gen_data_loader)
             end = time()
-            print('epoch:' + str(self.epoch) + '\t time:' + str(end - start))
+            print("epoch:{:04d}, time:{:8.6f} seconds".format(self.epoch, end - start))
             self.add_epoch()
             if epoch % 5 == 0:
                 self.evaluate()
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
         return
-
 
     def init_real_trainng(self, data_loc=None):
         from utils.text_process import text_precess, text_to_code
@@ -167,6 +179,3 @@ class Mle(Gan):
                 get_real_test_file()
                 self.evaluate()
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
-
-
-

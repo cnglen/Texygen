@@ -4,6 +4,10 @@ from utils.metrics.Metrics import Metrics
 
 
 class Nll(Metrics):
+    """
+    Negative likely hood: 计算RNN在data_loader数据上的nll_loss
+    """
+
     def __init__(self, data_loader, rnn, sess):
         super().__init__()
         self.name = 'nll-oracle'
