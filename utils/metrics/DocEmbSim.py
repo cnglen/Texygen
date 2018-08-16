@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import collections
 import math
 import random
@@ -11,7 +14,11 @@ from utils.metrics.Metrics import Metrics
 
 
 class DocEmbSim(Metrics):
-    def __init__(self, oracle_file=None, generator_file=None, num_vocabulary = None):
+    """
+    # FIXME: 1.5.0-rc0: return NaN
+    """
+
+    def __init__(self, oracle_file=None, generator_file=None, num_vocabulary=None):
         super().__init__()
         self.name = 'EmbeddingSimilarity'
         self.oracle_sim = None
@@ -36,7 +43,6 @@ class DocEmbSim(Metrics):
         if self.valid_examples is not None:
             return self.valid_examples
 
-        import collections
         words = []
         with open(self.oracle_file, 'r') as file:
             for line in file:
@@ -46,12 +52,12 @@ class DocEmbSim(Metrics):
         counts = collections.Counter(words)
         new_list = sorted(words, key=lambda x: -counts[x])
         word_set = list(set(new_list))
-        if len(word_set) < self.num_vocabulary//10:
+        if len(word_set) < self.num_vocabulary // 10:
             self.valid_examples = word_set
             return word_set
         else:
-            self.valid_examples = word_set[0:self.num_vocabulary//10]
-            return word_set[0:self.num_vocabulary//10]
+            self.valid_examples = word_set[0:self.num_vocabulary // 10]
+            return word_set[0:self.num_vocabulary // 10]
 
     def read_data(self, file):
         words = []
@@ -144,6 +150,9 @@ class DocEmbSim(Metrics):
                     _, l = session.run([optimizer, loss], feed_dict=feed_dict)
                     average_loss += l
             similarity_value = similarity.eval()
+            valid_embeddings_value = valid_embeddings.eval()
+            normalized_embeddings_value = normalized_embeddings.eval()
+            print("-------->", session.run(embeddings))
             return similarity_value
 
     def get_oracle_sim(self):
@@ -157,5 +166,9 @@ class DocEmbSim(Metrics):
             raise ArithmeticError
         corr = 0
         for index in range(len(self.oracle_sim)):
+            print(index, (1 - cosine(np.array(self.oracle_sim[index]),
+                                     np.array(self.gen_sim[index]))),
+                  self.oracle_sim[index],
+                  self.gen_sim[index])
             corr += (1 - cosine(np.array(self.oracle_sim[index]), np.array(self.gen_sim[index])))
         return np.log10(corr / len(self.oracle_sim))

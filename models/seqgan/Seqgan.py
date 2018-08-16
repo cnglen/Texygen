@@ -13,6 +13,11 @@ from utils.oracle.OracleCfg import OracleCfg
 from utils.oracle.OracleLstm import OracleLstm
 from utils.text_process import *
 from utils.utils import *
+import logging
+FORMAT = '%(asctime)s - %(name)s - %(levelname)s: %(message)s'
+logging.basicConfig(format=FORMAT)
+logger = logging.getLogger(name="texygen_seqgan")
+logger.setLevel(logging.INFO)
 
 
 class Seqgan(Gan):
@@ -44,12 +49,18 @@ class Seqgan(Gan):
         self.add_metric(inll)
 
         from utils.metrics.DocEmbSim import DocEmbSim
-        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file, num_vocabulary=self.vocab_size)
+        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file,
+                           num_vocabulary=self.vocab_size)
         self.add_metric(docsim)
 
     def train_discriminator(self):
+        """
+        train discriminator: 3 batch?
+        """
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
         self.dis_data_loader.load_train_data(self.oracle_file, self.generator_file)
+
+        #logger.info("self.dis_data_loader num_batch={} vs 3".format(self.dis_data_loader.num_batch))
         for _ in range(3):
             self.dis_data_loader.next_batch()
             x_batch, y_batch = self.dis_data_loader.next_batch()
@@ -57,7 +68,7 @@ class Seqgan(Gan):
                 self.discriminator.input_x: x_batch,
                 self.discriminator.input_y: y_batch,
             }
-            loss,_ = self.sess.run([self.discriminator.d_loss, self.discriminator.train_op], feed)
+            loss, _ = self.sess.run([self.discriminator.d_loss, self.discriminator.train_op], feed)
             print(loss)
 
     def evaluate(self):
@@ -101,12 +112,18 @@ class Seqgan(Gan):
         self.set_data_loader(gen_loader=gen_dataloader, dis_loader=dis_dataloader, oracle_loader=oracle_dataloader)
 
     def train_oracle(self):
+        logger.info("v={}".format(self.vocab_size))
+        logger.info("Seqgan: train_oracle ...")
         self.init_oracle_trainng()
         self.init_metric()
         self.sess.run(tf.global_variables_initializer())
 
         self.pre_epoch_num = 80
         self.adversarial_epoch_num = 100
+
+        # self.pre_epoch_num = 2
+        # self.adversarial_epoch_num = 3
+
         self.log = open('experiment-log-seqgan.csv', 'w')
         generate_samples(self.sess, self.oracle, self.batch_size, self.generate_num, self.oracle_file)
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
@@ -126,7 +143,7 @@ class Seqgan(Gan):
 
         print('start pre-train discriminator:')
         self.reset_epoch()
-        for epoch in range(self.pre_epoch_num):
+        for epoch in range(self.pre_epoch_num):  # 80*3batch?
             print('epoch:' + str(epoch))
             self.train_discriminator()
 
@@ -138,6 +155,7 @@ class Seqgan(Gan):
             start = time()
             for index in range(1):
                 samples = self.generator.generate(self.sess)
+                logger.info("update g using samples.shape={}".format(samples.shape))
                 rewards = self.reward.get_reward(self.sess, samples, 16, self.discriminator)
                 feed = {
                     self.generator.x: samples,
@@ -153,7 +171,10 @@ class Seqgan(Gan):
 
             self.reward.update_params()
             for _ in range(15):
+                # 15*3_batch
                 self.train_discriminator()
+
+        logger.info("Seqgan: train_oracle done")
 
     def init_cfg_training(self, grammar=None):
         oracle = OracleCfg(sequence_length=self.sequence_length, cfg_grammar=grammar)
@@ -286,13 +307,13 @@ class Seqgan(Gan):
 
     def init_real_metric(self):
         from utils.metrics.DocEmbSim import DocEmbSim
-        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file, num_vocabulary=self.vocab_size)
+        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file,
+                           num_vocabulary=self.vocab_size)
         self.add_metric(docsim)
 
         inll = Nll(data_loader=self.gen_data_loader, rnn=self.generator, sess=self.sess)
         inll.set_name('nll-test')
         self.add_metric(inll)
-
 
     def train_real(self, data_loc=None):
         from utils.text_process import code_to_text
@@ -358,5 +379,3 @@ class Seqgan(Gan):
             self.reward.update_params()
             for _ in range(15):
                 self.train_discriminator()
-
-

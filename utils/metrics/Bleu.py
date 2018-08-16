@@ -8,6 +8,10 @@ from utils.metrics.Metrics import Metrics
 
 
 class Bleu(Metrics):
+    """
+    对于test_text中的每行句子，以real_text中的所有句子作为reference, 计算BLEU, 最后求平均
+    """
+
     def __init__(self, test_text='', real_text='', gram=3):
         super().__init__()
         self.name = 'Bleu'
@@ -22,6 +26,9 @@ class Bleu(Metrics):
         return self.name
 
     def get_score(self, is_fast=True, ignore=False):
+        """
+        - is_fast=True, reference --sampled to-> 500
+        """
         if ignore:
             return 0
         if self.is_first:
@@ -36,7 +43,7 @@ class Bleu(Metrics):
             reference = list()
             with open(self.real_data) as real_data:
                 for text in real_data:
-                    text = nltk.word_tokenize(text)
+                    text = nltk.word_tokenize(text)  # text -> list of words
                     reference.append(text)
             self.reference = reference
             return reference
@@ -44,6 +51,9 @@ class Bleu(Metrics):
             return self.reference
 
     def get_bleu(self):
+        """
+        - single process version, slow version
+        """
         ngram = self.gram
         bleu = list()
         reference = self.get_reference()
@@ -66,6 +76,7 @@ class Bleu(Metrics):
         return self.get_bleu_parallel(reference=reference)
 
     def get_bleu_parallel(self, reference=None):
+        """fast version of get_bleu() """
         ngram = self.gram
         if reference is None:
             reference = self.get_reference()

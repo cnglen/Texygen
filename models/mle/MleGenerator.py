@@ -100,9 +100,8 @@ class Generator(object):
 
         # pretraining loss
         self.pretrain_loss = -tf.reduce_sum(
-            tf.one_hot(tf.to_int32(tf.reshape(self.x, [-1])), self.num_vocabulary, 1.0, 0.0) * tf.log(
-                tf.clip_by_value(tf.reshape(self.g_predictions, [-1, self.num_vocabulary]), 1e-20, 1.0)
-            )
+            tf.one_hot(tf.to_int32(tf.reshape(self.x, [-1])), self.num_vocabulary, 1.0, 0.0) *
+            tf.log(tf.clip_by_value(tf.reshape(self.g_predictions, [-1, self.num_vocabulary]), 1e-20, 1.0))
         ) / (self.sequence_length * self.batch_size)
 
         # training updates
@@ -132,6 +131,9 @@ class Generator(object):
 
     def pretrain_step(self, sess, x):
         outputs = sess.run([self.pretrain_updates, self.pretrain_loss], feed_dict={self.x: x})
+        # g_pred = sess.run(self.g_predictions, feed_dict={self.x: x})
+        # dbg_x = x
+        # print(g_pred.shape, dbg_x.shape)
         return outputs
 
     def init_matrix(self, shape):
@@ -164,7 +166,8 @@ class Generator(object):
             self.Wc, self.Uc, self.bc])
 
         def unit(x, hidden_memory_tm1):
-            previous_hidden_state, c_prev = tf.unstack(hidden_memory_tm1)
+            """LSTM cell"""
+            previous_hidden_state, c_prev = tf.unstack(hidden_memory_tm1)  # h_{t-1}, c{t-1}
 
             # Input Gate
             i = tf.sigmoid(
@@ -191,10 +194,10 @@ class Generator(object):
             )
 
             # Final Memory cell
-            c = f * c_prev + i * c_
+            c = f * c_prev + i * c_  # c_t
 
             # Current Hidden state
-            current_hidden_state = o * tf.nn.tanh(c)
+            current_hidden_state = o * tf.nn.tanh(c)  # h_t
 
             return tf.stack([current_hidden_state, c])
 

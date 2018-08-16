@@ -10,7 +10,13 @@ def main():
     ifile = "./experiment-log-seqgan.csv"
     # ifile = "./experiment-log-mle.csv"
     raw_data = pd.read_csv(ifile)
-    raw_data.plot(x="idx_epoch", y=["nll-oracle", "nll-test", "EmbeddingSimilarity"], grid=True, marker="o")
+
+    for icol, col in enumerate(["nll-oracle", "nll-test", "EmbeddingSimilarity"]):
+        plt.subplot(3, 1, icol + 1)
+        plt.plot(raw_data.idx_epoch, raw_data[col], marker="o")
+        plt.xlabel("idx_epoch")
+        plt.ylabel(col)
+        plt.grid(True)
     plt.show()
 
 
