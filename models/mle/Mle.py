@@ -57,7 +57,8 @@ class Mle(Gan):
         self.add_metric(inll)
 
         from utils.metrics.DocEmbSim import DocEmbSim
-        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file, num_vocabulary=self.vocab_size)
+        docsim = DocEmbSim(oracle_file=self.oracle_file, generator_file=self.generator_file,
+                           num_vocabulary=self.vocab_size)
         self.add_metric(docsim)
 
     def train_discriminator(self):
@@ -78,12 +79,13 @@ class Mle(Gan):
             self.oracle_data_loader.create_batches(self.generator_file)
         if self.log is not None:
             if self.epoch == 0 or self.epoch == 1:
+                self.log.write("idx_epoch,")
                 for metric in self.metrics:
                     self.log.write(metric.get_name() + ',')
                 self.log.write('\n')
             scores = super().evaluate()
             for score in scores:
-                self.log.write(str(score)+',')
+                self.log.write(str(score) + ',')
             self.log.write('\n')
             return scores
         return super().evaluate()
@@ -111,7 +113,6 @@ class Mle(Gan):
                 self.evaluate()
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
         return
-
 
     def init_real_trainng(self, data_loc=None):
         from utils.text_process import text_precess, text_to_code
@@ -167,6 +168,3 @@ class Mle(Gan):
                 get_real_test_file()
                 self.evaluate()
         generate_samples(self.sess, self.generator, self.batch_size, self.generate_num, self.generator_file)
-
-
-

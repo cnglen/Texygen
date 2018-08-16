@@ -1,6 +1,9 @@
-import getopt
-import sys
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+
+import sys
+import argparse
 from colorama import Fore
 
 from models.gsgan.Gsgan import Gsgan
@@ -10,7 +13,6 @@ from models.mle.Mle import Mle
 from models.rankgan.Rankgan import Rankgan
 from models.seqgan.Seqgan import Seqgan
 from models.textGan_MMD.Textgan import TextganMmd
-import argparse
 
 
 def set_gan(gan_name):
@@ -54,13 +56,20 @@ def set_training(gan, training_method):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(prog="app_texygen", description="using texygen to train a generator",
+    parser = argparse.ArgumentParser(prog="app_texygen",
+                                     description="using texygen to train a generator",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument("-g", "--gan-type", default="mle", help="seqgan|gsgan|textgan|leakgan|rankgan|maligan|mle")
-    parser.add_argument("-t", "--train-type", default="oracle", help="oracle|cfg|real")
-    parser.add_argument("-d", "--data-location", default=None, help="data location")
-
+    parser.add_argument("-g", "--gan-type",
+                        default="mle",
+                        help="type of gan",
+                        choices=["seqgan", "gsgan", "textgan", "leakgan", "rankgan", "maligan", "mle"])
+    parser.add_argument("-t", "--train-type",
+                        default="oracle",
+                        help="type of training",
+                        choices=["oracle", "cfg", "real"])
+    parser.add_argument("-d", "--data-location",
+                        default=None,
+                        help="data location")
     args = parser.parse_args()
 
     gan = set_gan(args.gan_type)
